@@ -1,12 +1,353 @@
-{
-  "name": "F1 Team Radio",
-  "short_name": "F1 Radio",
-  "start_url": "./index.html",
-  "display": "standalone",
-  "background_color": "#0b0b0f",
-  "theme_color": "#0b0b0f",
-  "icons": [
-    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
-    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"}
-  ]
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="F1 Radio">
+<meta name="theme-color" content="#0b0b0f" id="tc">
+<title>F1 Team Radio</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{height:100%}
+body{margin:0;min-height:100%;background:#0b0b0f;color:#eee;font-family:-apple-system,system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:calc(env(safe-area-inset-top) + 20px) 20px calc(env(safe-area-inset-bottom) + 20px);text-align:center}
+h1{margin:0;font-size:28px;letter-spacing:4px;font-weight:800}
+h1 span{color:#e10600}
+input{font-size:20px;padding:14px;border-radius:12px;border:1px solid #333;background:#16161c;color:#fff;width:240px;text-align:center}
+button,.btn{font-size:18px;font-weight:700;letter-spacing:2px;padding:14px 34px;border:0;border-radius:12px;background:#e10600;color:#fff;text-decoration:none;display:inline-block}
+button:disabled{opacity:.5}
+#room{display:none;flex-direction:column;align-items:center;gap:22px}
+#orb{touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;width:170px;height:170px;border-radius:50%;border:4px solid #2a2a33;background:#0b0b0fcc;display:flex;align-items:center;justify-content:center;font-size:15px;color:#888;transition:.15s}
+#orb.on{border-color:#e10600;box-shadow:0 0 50px #e10600aa;color:#fff}
+#st{font-size:14px;color:#c4c4cc;min-height:18px}
+label{font-size:13px;color:#c4c4cc;display:flex;flex-direction:column;gap:6px;align-items:center}
+input[type=range]{width:220px;padding:0}
+small{color:#9a9aa5;max-width:300px}
+
+/* Anmeldung */
+#join{display:flex;flex-direction:column;align-items:center;gap:14px}
+#join label{font-size:12px;color:#c4c4cc;gap:5px}
+
+/* Teilnehmer */
+#who{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:320px}
+#who span{padding:6px 12px;border-radius:20px;background:#16161cdd;border:1px solid #333;font-size:13px;color:#ccc}
+#who span.on{border-color:#e10600;color:#fff;box-shadow:0 0 12px #e10600aa}
+
+/* Hintergründe */
+#bgs{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+#bgs button{width:34px;height:34px;padding:0;border-radius:50%;border:2px solid #555;letter-spacing:0;background-size:cover}
+#bgs button.on{border-color:#fff;box-shadow:0 0 0 2px #e10600}
+.bg-dark,[data-bg=dark]{background:#0b0b0f}
+.bg-carbon,[data-bg=carbon]{background:#0d0d0f;background-image:linear-gradient(45deg,#1b1b20 25%,transparent 25%,transparent 75%,#1b1b20 75%),linear-gradient(45deg,#1b1b20 25%,transparent 25%,transparent 75%,#1b1b20 75%);background-size:8px 8px;background-position:0 0,4px 4px}
+.bg-flag,[data-bg=flag]{background:conic-gradient(#121216 25%,#26262e 0 50%,#121216 0 75%,#26262e 0) 0 0/48px 48px}
+.bg-red,[data-bg=red]{background:radial-gradient(circle at 50% 0,#8a0400,#2a0100 60%,#0b0b0f)}
+.bg-night,[data-bg=night]{background:linear-gradient(160deg,#0a1a45,#1d0b3d 55%,#0b0b0f)}
+.bg-rain,[data-bg=rain]{background:repeating-linear-gradient(105deg,#ffffff0a 0 2px,transparent 2px 14px),linear-gradient(#1c2630,#0d1218)}
+body[data-bg]{background-attachment:fixed}
+
+/* Aufnahme */
+#rec{display:flex;align-items:center;gap:14px}
+#recBtn{background:#16161c;border:1px solid #333;color:#ddd;font-size:15px;padding:12px 22px;display:flex;align-items:center;gap:10px}
+#recBtn i{width:12px;height:12px;border-radius:50%;background:#e10600;display:block}
+#recBtn.on{background:#e10600;border-color:#e10600;color:#fff}
+#recBtn.on i{border-radius:2px;background:#fff}
+#recT{font-variant-numeric:tabular-nums;font-size:15px;color:#c4c4cc;min-width:44px;text-align:left}
+#recBtn.on+#recT{color:#fff}
+#clip{display:none;flex-direction:column;align-items:center;gap:12px}
+#clip audio{width:280px;max-width:100%}
+#clipBtns{display:flex;gap:10px}
+#clipBtns .btn,#clipBtns button{font-size:14px;padding:11px 20px}
+#share{display:none;background:#22222a}
+@media (prefers-reduced-motion:no-preference){#recBtn.on i{animation:blink 1.2s steps(2,start) infinite}}
+@keyframes blink{50%{opacity:.35}}
+</style>
+</head>
+<body data-bg="dark">
+<h1>TEAM <span>RADIO</span></h1>
+
+<div id="join">
+  <label>Teamname<input id="team" placeholder="z. B. Ferrari" maxlength="20" autocomplete="off"></label>
+  <label>Code<input id="code" placeholder="Raumcode" maxlength="20" autocapitalize="off" autocomplete="off"></label>
+  <label>Benutzername<input id="uname" placeholder="z. B. Max" maxlength="16" autocomplete="nickname"></label>
+  <button id="go">VERBINDEN</button>
+  <small>Alle mit demselben Teamnamen und Code hören sich im F1-Funk-Sound. Am besten mit Kopfhörern, sonst gibt es Rückkopplung.</small>
+</div>
+
+<div id="room">
+  <div id="orb">Stille</div>
+  <div id="st"></div>
+  <div id="who"></div>
+  <label style="flex-direction:row;gap:10px;font-size:15px;color:#ccc"><input type="checkbox" id="ptt" style="width:auto"> Push-to-Talk (Kreis gedrückt halten)</label>
+  <label>Mikro-Empfindlichkeit<input id="sens" type="range" min="1" max="20" value="8"></label>
+
+  <div id="rec">
+    <button id="recBtn"><i></i><span id="recL">Aufnehmen</span></button>
+    <span id="recT"></span>
+  </div>
+  <div id="clip">
+    <audio id="clipA" controls playsinline></audio>
+    <div id="clipBtns">
+      <a id="dl" class="btn">Speichern</a>
+      <button id="share">Teilen</button>
+    </div>
+  </div>
+
+  <button id="leave">VERLASSEN</button>
+</div>
+
+<label id="bgl">Hintergrund
+  <div id="bgs"></div>
+</label>
+
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+let ctx,mic,txDest,recDest,tx,peer,base,teamName='',me='',meVad=null,noiseBuf,thr=0.03,quietUntil=0,active=0,ptt=false,pttOn=false,wl=null;
+const store={
+  get(k){try{return localStorage.getItem('f1r-'+k)}catch(e){return null}},
+  set(k,v){try{localStorage.setItem('f1r-'+k,v)}catch(e){}}
+};
+
+/* ---------- Hintergründe ---------- */
+const BGS=[['dark','Dunkel','#0b0b0f'],['carbon','Karbon','#0d0d0f'],['flag','Zielflagge','#121216'],['red','Rot','#2a0100'],['night','Nacht','#0a1a45'],['rain','Regen','#1c2630']];
+function setBg(id){
+  if(!BGS.some(b=>b[0]===id))id='dark';
+  document.body.dataset.bg=id;store.set('bg',id);
+  $('tc').content=BGS.find(b=>b[0]===id)[2];
+  [...$('bgs').children].forEach(b=>b.classList.toggle('on',b.dataset.id===id));
 }
+BGS.forEach(([id,label])=>{
+  const b=document.createElement('button');
+  b.className='bg-'+id;b.dataset.id=id;b.title=label;b.setAttribute('aria-label','Hintergrund '+label);
+  b.onclick=()=>setBg(id);$('bgs').appendChild(b);
+});
+setBg(store.get('bg')||'dark');
+$('team').value=store.get('team')||'';$('code').value=store.get('code')||'';$('uname').value=store.get('uname')||'';
+
+async function keepAwake(){try{wl=await navigator.wakeLock.request('screen')}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&mic)keepAwake()});
+function pttSet(on){
+  if(!ptt||on===pttOn)return;
+  pttOn=on;mic.getAudioTracks()[0].enabled=on;beep(on);setActive(on?1:-1);
+}
+$('ptt').onchange=e=>{
+  ptt=e.target.checked;mic.getAudioTracks()[0].enabled=!ptt;
+  if(!ptt&&pttOn){pttOn=false;setActive(-1)}
+  renderMembers();
+};
+const orbEl=$('orb');
+orbEl.addEventListener('pointerdown',e=>{e.preventDefault();pttSet(true)});
+['pointerup','pointercancel','pointerleave'].forEach(n=>orbEl.addEventListener(n,()=>pttSet(false)));
+const calls={},members=[],vads=[],names={};
+
+$('sens').oninput=e=>{thr=0.06-e.target.value*0.0027}; // 1=unempfindlich ... 20=empfindlich
+$('sens').oninput({target:$('sens')});
+
+function curve(k){const n=256,c=new Float32Array(n);for(let i=0;i<n;i++){const x=i*2/n-1;c[i]=(3+k)*x*20*(Math.PI/180)/(Math.PI+k*Math.abs(x))}return c}
+
+function beep(start){
+  return;                                                // keine Piepstöne mehr (weder Start noch Ende)
+  const t=ctx.currentTime;quietUntil=performance.now()+600;
+  const bus=ctx.createGain(),bp=ctx.createBiquadFilter(),ws=ctx.createWaveShaper(),out=ctx.createGain();
+  bp.type='bandpass';bp.frequency.value=1500;bp.Q.value=.6;ws.curve=curve(10);out.gain.value=1.6;
+  bus.connect(txDest);
+  bus.connect(bp);bp.connect(ws);ws.connect(out);out.connect(ctx.destination);
+  out.connect(recDest);
+  const du=(at,f)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.type='triangle';o.frequency.value=f;
+    g.gain.setValueAtTime(0,at);g.gain.linearRampToValueAtTime(.5,at+.006);
+    g.gain.exponentialRampToValueAtTime(.001,at+.075);
+    o.connect(g).connect(bus);o.start(at);o.stop(at+.09)};
+  const noise=(at,dur,vol)=>{const n=ctx.createBufferSource(),g=ctx.createGain();n.buffer=noiseBuf;
+    g.gain.setValueAtTime(vol,at);g.gain.exponentialRampToValueAtTime(.001,at+dur);
+    n.connect(g).connect(bus);n.start(at);n.stop(at+dur+.02)};
+  if(start){for(let i=0;i<4;i++)du(t+i*.1,900)}
+  else{du(t,700);noise(t+.07,.18,.3)}
+}
+
+// Funk-Effekt. toSpeaker=false: nur für die Aufnahme (eigene Stimme hörst du live nicht)
+function radioChain(stream,toSpeaker=true){
+  const src=ctx.createMediaStreamSource(stream),
+    hp=ctx.createBiquadFilter(),lp=ctx.createBiquadFilter(),
+    ws=ctx.createWaveShaper(),comp=ctx.createDynamicsCompressor(),g=ctx.createGain();
+  hp.type='highpass';hp.frequency.value=500;
+  lp.type='lowpass';lp.frequency.value=3200;
+  ws.curve=curve(30);g.gain.value=1.5;
+  src.connect(hp);hp.connect(lp);lp.connect(ws);ws.connect(comp);comp.connect(g);
+  if(toSpeaker)g.connect(ctx.destination);
+  g.connect(recDest);
+  // Chrome-Workaround: Stream muss an ein Audio-Element hängen, damit WebAudio Daten bekommt
+  const a=new Audio();a.muted=true;a.srcObject=stream;a.play().catch(()=>{});
+}
+
+function setActive(d){active=Math.max(0,active+d);const o=$('orb');o.classList.toggle('on',active>0);o.textContent=active>0?'● FUNK':'Stille';renderMembers()}
+
+function renderMembers(){
+  const w=$('who');if(!w||!meVad)return;
+  const list=[{n:me+' (du)',on:ptt?pttOn:meVad.on}];
+  Object.values(calls).forEach(c=>list.push({n:names[c.peer]||'…',on:!!(c.vad&&c.vad.on)}));
+  w.textContent='';
+  list.forEach(m=>{const s=document.createElement('span');s.textContent=(m.on?'● ':'')+m.n;s.classList.toggle('on',m.on);w.appendChild(s)});
+}
+
+function addVad(stream,local){
+  const an=ctx.createAnalyser();an.fftSize=1024;
+  const hp=ctx.createBiquadFilter(),lp=ctx.createBiquadFilter();
+  hp.type='highpass';hp.frequency.value=300;
+  lp.type='lowpass';lp.frequency.value=3000;
+  ctx.createMediaStreamSource(stream).connect(hp);hp.connect(lp);lp.connect(an);
+  const buf=new Uint8Array(an.fftSize),v={on:false,last:0,since:0,nf:0.01,dead:false,
+    tick(now){
+      if(local&&(now<quietUntil||(ptt&&!v.on)))return;
+      an.getByteTimeDomainData(buf);let s=0;
+      for(const b of buf){const x=(b-128)/128;s+=x*x}
+      const r=Math.sqrt(s/buf.length);
+      const limit=Math.max(thr,v.nf*3);
+      if(r>limit){
+        v.last=now;if(!v.since)v.since=now;
+        if(!v.on&&now-v.since>150){v.on=true;if(local)beep(true);setActive(1)}
+      }else{
+        v.since=0;
+        if(!v.on)v.nf=Math.min(0.08,v.nf*0.97+r*0.03);
+        if(v.on&&now-v.last>800){v.on=false;if(local)beep(false);setActive(-1)}
+      }
+    }};
+  vads.push(v);return v;
+}
+setInterval(()=>{const n=performance.now();vads.forEach(v=>v.tick(n))},50);
+
+function count(){$('st').textContent=teamName+' – '+(Object.keys(calls).length+1)+' im Raum';renderMembers()}
+
+function sendHello(id){
+  const c=peer.connect(id,{metadata:{hello:true}});
+  c.on('open',()=>{c.send({t:'hello',name:me});setTimeout(()=>{try{c.close()}catch(e){}},3000)});
+}
+
+function attach(call){
+  call.on('stream',s=>{
+    if(calls[call.peer])return;
+    calls[call.peer]=call;call.vad=addVad(s,false);radioChain(s);count();
+  });
+  call.on('close',()=>{
+    if(call.vad){call.vad.dead=true;const i=vads.indexOf(call.vad);if(i>-1)vads.splice(i,1);if(call.vad.on)setActive(-1)}
+    delete calls[call.peer];delete names[call.peer];count();
+  });
+}
+
+function init(asHost){
+  peer=asHost?new Peer(base+'-host'):new Peer();
+  peer.on('open',()=>{
+    $('st').textContent=asHost?'Raum erstellt, warte auf andere...':'Verbinde...';
+    if(!asHost){
+      const c=peer.connect(base+'-host',{reliable:true});
+      c.on('data',d=>{if(d.t==='list')d.ids.forEach(id=>{if(!calls[id])attach(peer.call(id,tx,{metadata:{name:me}}))})});
+    }
+  });
+  peer.on('call',call=>{
+    names[call.peer]=(call.metadata&&call.metadata.name)||'Fahrer';
+    call.answer(tx);attach(call);sendHello(call.peer);
+  });
+  peer.on('connection',c=>{
+    if(c.metadata&&c.metadata.hello){
+      c.on('data',d=>{if(d&&d.t==='hello'){names[c.peer]=String(d.name||'Fahrer').slice(0,16);renderMembers()}});
+      return;
+    }
+    if(!asHost)return;
+    c.on('open',()=>{c.send({t:'list',ids:[peer.id].concat(members)});members.push(c.peer)});
+    c.on('close',()=>{const i=members.indexOf(c.peer);if(i>-1)members.splice(i,1)});
+  });
+  peer.on('error',e=>{
+    if(e.type==='unavailable-id'&&asHost){peer.destroy();init(false)}
+    else if(e.type!=='peer-unavailable')$('st').textContent='Fehler: '+e.type;
+  });
+}
+
+/* ---------- Recording ---------- */
+let rec=null,recChunks=[],recFmt=null,recStart=0,recTick=null,clipUrl=null,clipFile=null,clipSaved=true;
+
+function pickFormat(){
+  if(!window.MediaRecorder)return null;
+  const list=[['audio/webm;codecs=opus','webm'],['audio/mp4','m4a'],['audio/webm','webm'],['audio/ogg;codecs=opus','ogg']];
+  for(const [m,e] of list)if(MediaRecorder.isTypeSupported(m))return{mime:m,ext:e};
+  return null;
+}
+function fmtTime(ms){const s=Math.floor(ms/1000);return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+function stamp(){const d=new Date(),p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'-'+p(d.getHours())+p(d.getMinutes())+p(d.getSeconds())}
+
+function recStartNow(){
+  recFmt=pickFormat();
+  if(!recFmt){alert('Aufnahme wird von diesem Browser nicht unterstützt.');return}
+  recChunks=[];
+  rec=new MediaRecorder(recDest.stream,{mimeType:recFmt.mime});
+  rec.ondataavailable=e=>{if(e.data&&e.data.size)recChunks.push(e.data)};
+  rec.onstop=recFinish;
+  rec.start(1000);
+  recStart=Date.now();
+  $('recBtn').classList.add('on');$('recL').textContent='Stopp';
+  $('recT').textContent='00:00';
+  recTick=setInterval(()=>{$('recT').textContent=fmtTime(Date.now()-recStart)},250);
+}
+function recStopNow(){
+  if(rec&&rec.state!=='inactive')rec.stop();
+  clearInterval(recTick);
+  $('recBtn').classList.remove('on');$('recL').textContent='Aufnehmen';
+}
+function recFinish(){
+  if(!recChunks.length)return;
+  const type=recFmt.mime.split(';')[0];
+  const blob=new Blob(recChunks,{type});
+  if(clipUrl)URL.revokeObjectURL(clipUrl);
+  clipUrl=URL.createObjectURL(blob);
+  const room=(teamName||'raum').toLowerCase().replace(/[^a-z0-9]/g,'')||'raum';
+  const name='f1radio-'+room+'-'+stamp()+'.'+recFmt.ext;
+  clipFile=new File([blob],name,{type});
+  clipSaved=false;
+  $('clipA').src=clipUrl;
+  $('dl').href=clipUrl;$('dl').download=name;
+  $('clip').style.display='flex';
+  const canShare=navigator.canShare&&navigator.canShare({files:[clipFile]});
+  $('share').style.display=canShare?'inline-block':'none';
+}
+$('recBtn').onclick=()=>{rec&&rec.state==='recording'?recStopNow():recStartNow()};
+$('dl').onclick=()=>{clipSaved=true};
+$('share').onclick=async()=>{
+  try{await navigator.share({files:[clipFile],title:'F1 Team Radio'});clipSaved=true}catch(e){}
+};
+
+$('go').onclick=async()=>{
+  const team=$('team').value.trim(),codeRaw=$('code').value.trim(),uname=$('uname').value.trim();
+  const teamId=team.toLowerCase().replace(/[^a-z0-9]/g,''),codeId=codeRaw.toLowerCase().replace(/[^a-z0-9]/g,'');
+  if(!teamId){$('team').focus();return}
+  if(!codeId){$('code').focus();return}
+  if(!uname){$('uname').focus();return}
+  store.set('team',team);store.set('code',codeRaw);store.set('uname',uname);
+  teamName=team;me=uname;
+  $('go').disabled=true;
+  try{
+    ctx=new (window.AudioContext||window.webkitAudioContext)();ctx.resume(); // direkt im Tap, wichtig für iOS
+    noiseBuf=ctx.createBuffer(1,ctx.sampleRate,ctx.sampleRate);
+    const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+    mic=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+  }catch(e){alert('Mikrofon nicht erlaubt oder nicht verfügbar. Bitte Zugriff erlauben und neu laden.');$('go').disabled=false;return}
+  base='f1radio-'+teamId+'-'+codeId;
+  txDest=ctx.createMediaStreamDestination();ctx.createMediaStreamSource(mic).connect(txDest);tx=txDest.stream;
+  recDest=ctx.createMediaStreamDestination();
+  radioChain(mic,false); // eigene Stimme mit Funk-Effekt, nur für die Aufnahme
+  meVad=addVad(mic,true);
+  if(!pickFormat())$('rec').style.display='none';
+  $('join').style.display='none';$('room').style.display='flex';
+  renderMembers();
+  keepAwake();
+  init(true);
+};
+
+$('leave').onclick=()=>{
+  const running=rec&&rec.state==='recording';
+  if((running||(clipUrl&&!clipSaved))&&!confirm('Die Aufnahme ist noch nicht gespeichert und geht verloren. Trotzdem verlassen?'))return;
+  location.reload();
+};
+</script>
+</body>
+</html>
